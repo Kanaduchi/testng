@@ -126,6 +126,8 @@ public class XMLReporter implements IReporter {
   private void writeSuiteToBuffer(XMLStringBuffer xmlBuffer, ISuite suite) {
     xmlBuffer.push(XMLReporterConfig.TAG_SUITE, getSuiteAttributes(suite));
     writeSuiteGroups(xmlBuffer, suite);
+    if (getConfig().isGenerateSuiteAttributes())
+      writeSuiteCustomAttributes(xmlBuffer, suite);
 
     Map<String, ISuiteResult> results = suite.getResults();
     XMLSuiteResultWriter suiteResultWriter = new XMLSuiteResultWriter(config);
@@ -207,6 +209,28 @@ public class XMLReporter implements IReporter {
       result.add(method);
     }
     return result;
+  }
+
+  private void writeSuiteCustomAttributes(XMLStringBuffer xmlBuffer, ISuite suite) {
+    xmlBuffer.push(XMLReporterConfig.TAG_ATTRIBUTES);
+    for (String attrName: suite.getAttributeNames()) {
+      if (attrName == null) {
+        continue;
+      }
+      Object attrValue = suite.getAttribute(attrName);
+
+      Properties attributeAttrs = new Properties();
+      attributeAttrs.setProperty(XMLReporterConfig.ATTR_NAME, attrName);
+      if (attrValue == null) {
+        attributeAttrs.setProperty(XMLReporterConfig.ATTR_IS_NULL, "true");
+        xmlBuffer.addEmptyElement(XMLReporterConfig.TAG_ATTRIBUTE, attributeAttrs);
+      } else {
+        xmlBuffer.push(XMLReporterConfig.TAG_ATTRIBUTE, attributeAttrs);
+        xmlBuffer.addCDATA(attrValue.toString());
+        xmlBuffer.pop();
+      }
+    }
+    xmlBuffer.pop();
   }
 
   /**
